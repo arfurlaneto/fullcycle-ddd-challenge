@@ -1,9 +1,9 @@
-import { IDomainEvent } from "./domain-event.interface";
+import EventInterface from "../event/event.interface";
 
 export abstract class AgreggateRoot{
-    events: Set<IDomainEvent> = new Set();
+    events: Set<EventInterface> = new Set();
 
-    addEvent(event: IDomainEvent){
+    addEvent(event: EventInterface){
         this.events.add(event);
     }   
 

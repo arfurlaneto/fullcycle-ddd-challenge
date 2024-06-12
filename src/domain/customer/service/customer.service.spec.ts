@@ -1,15 +1,14 @@
 import { Sequelize } from "sequelize-typescript";
 import { Mediator } from "../../@shared/service/mediator";
-import { CustomerAddressChanged } from "../entity/customer-address-changed.event";
-import { CustomerCreated } from "../entity/customer-created.event";
-import { CustomerAddressChangedListener } from "../listeners/customer-address-changed.listener";
-import { CustomerCreated1Listener } from "../listeners/customer-created-1.listener";
-import { CustomerCreated2Listener } from "../listeners/customer-created-2.listener";
 import  { CustomerService } from "./customer.service";
 import CustomerModel from "../../../infrastructure/customer/repository/sequelize/customer.model";
 import CustomerRepository from "../../../infrastructure/customer/repository/sequelize/customer.repository";
-import EventEmitter2 from "eventemitter2";
-import Address from "../value-object/address";
+import EventDispatcher from "../../@shared/event/event-dispatcher";
+import ConsoleLogWhenCustomerAddressIsChangedHandler from "../event/handler/console-log-when-customer-address-is-changed.handler";
+import ConsoleLogWhenCustomerIsCreated1Handler from "../event/handler/console-log-when-customer-is-created-1.handler";
+import ConsoleLogWhenCustomerIsCreated2Handler from "../event/handler/console-log-when-customer-is-created-2.handler";
+import CustomerCreatedEvent from "../event/customer-created.event";
+import CustomerAddressChanged from "../event/customer-address-changed.event";
 
 describe("Customer service unit tests", () => {
   let sequelize: Sequelize;
@@ -31,27 +30,29 @@ describe("Customer service unit tests", () => {
   });
 
   it("should emit customer events", async () => {
-    let customerCreated1Listener = new CustomerCreated1Listener()
-    let customerCreated2Listener = new CustomerCreated2Listener()
-    let customerAddressChanged = new CustomerAddressChangedListener()
-
-    let spyCustomerCreated1Listener = jest.spyOn(customerCreated1Listener, "handle");
-    let spyCustomerCreated2Listener = jest.spyOn(customerCreated2Listener, "handle");
-    let spyCustomerAddressChanged = jest.spyOn(customerAddressChanged, "handle");
 
     const mediator = new Mediator();
-    mediator.eventEmitter = new EventEmitter2()
-    mediator.register(CustomerCreated.name, customerCreated1Listener.handle)
-    mediator.register(CustomerCreated.name, customerCreated2Listener.handle)
-    mediator.register(CustomerAddressChanged.name, customerAddressChanged.handle)
+    mediator.eventDispatcher = new EventDispatcher();
+
+    let customerCreated1Handler = new ConsoleLogWhenCustomerIsCreated1Handler()
+    let customerCreated2Handler = new ConsoleLogWhenCustomerIsCreated2Handler()
+    let customerAddressChangedHandler = new ConsoleLogWhenCustomerAddressIsChangedHandler()
+
+    let spyCustomerCreated1Handler = jest.spyOn(customerCreated1Handler, "handle");
+    let spyCustomerCreated2Handler  = jest.spyOn(customerCreated2Handler, "handle");
+    let spyCustomerAddressChangedHandler = jest.spyOn(customerAddressChangedHandler, "handle");
+
+    mediator.register(CustomerCreatedEvent.name, customerCreated1Handler)
+    mediator.register(CustomerCreatedEvent.name, customerCreated2Handler)
+    mediator.register(CustomerAddressChanged.name, customerAddressChangedHandler)
   
     const customerRepository = new CustomerRepository()
     let customerService = new CustomerService(customerRepository, mediator)
     let customer = await customerService.create("Customer 1", "street", 10, "zip", "city")
     await customerService.changeAddress(customer.id, "street 2", 20, "zip 2", "city 2")
 
-    expect(spyCustomerCreated1Listener).toHaveBeenCalled();
-    expect(spyCustomerCreated2Listener).toHaveBeenCalled();
-    expect(spyCustomerAddressChanged).toHaveBeenCalled();
+    expect(spyCustomerCreated1Handler).toHaveBeenCalled();
+    expect(spyCustomerCreated2Handler).toHaveBeenCalled();
+    expect(spyCustomerAddressChangedHandler).toHaveBeenCalled();
   });
 });

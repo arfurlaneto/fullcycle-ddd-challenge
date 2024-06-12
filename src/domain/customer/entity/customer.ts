@@ -1,7 +1,8 @@
 import { AgreggateRoot } from "../../@shared/domain/aggregate-root";
+import CustomerAddressChanged from "../event/customer-address-changed.event";
+import CustomerCreatedEvent from "../event/customer-created.event";
 import Address from "../value-object/address";
-import { CustomerAddressChanged } from "./customer-address-changed.event";
-import { CustomerCreated } from "./customer-created.event";
+
 export default class Customer extends AgreggateRoot {
   private _id: string;
   private _name: string = "";
@@ -20,7 +21,7 @@ export default class Customer extends AgreggateRoot {
     const customer = new Customer(id, name);
     customer.changeAddress(address)
     customer.clearEvents()
-    customer.addEvent(new CustomerCreated(id, name));
+    customer.addEvent(new CustomerCreatedEvent({customerId: id, name: name}));
     return customer
   }
 
@@ -56,14 +57,14 @@ export default class Customer extends AgreggateRoot {
   
   changeAddress(address: Address) {
     this._address = address;
-    this.addEvent(new CustomerAddressChanged(
-      this.id,
-      this.name,
-      address.street,
-      address.number,
-      address.zip,
-      address.city
-    ));
+    this.addEvent(new CustomerAddressChanged({
+      customerId: this.id,
+      name: this.name,
+      street: address.street,
+      number: address.number,
+      zip: address.zip,
+      city: address.city
+    }));
   }
 
   isActive(): boolean {
