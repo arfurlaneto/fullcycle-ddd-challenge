@@ -1,1 +1,0 @@
-# fullcycle-ddd-challenge
